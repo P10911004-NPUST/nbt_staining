@@ -1,3 +1,23 @@
+# Files
+*.exe
+*.jpg
+*.jpeg
+# *.tif
+# *.tiff
+*.bmp
+
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.csv
+
+# Virtual environment
+pyenv/
+venv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
