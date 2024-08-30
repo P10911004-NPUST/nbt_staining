@@ -2,8 +2,8 @@
 *.exe
 *.jpg
 *.jpeg
-# *.tif
-# *.tiff
+*.tif
+*.tiff
 *.bmp
 
 *.xls
