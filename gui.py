@@ -47,10 +47,11 @@ def run_nbt():
 
     df0 = {
         "img_name": [],
+        "background_intensity": [],
         "nbt_area": [],
         "nbt_intensity": [],
-        "nbt_intensity_per_area": [],
-        "nbt_intensity_trim_perc": [],
+        "avg_nbt": [],
+        "trim_avg_nbt": [],
     }
 
     pool = mp.Pool()
@@ -58,10 +59,11 @@ def run_nbt():
     pool.close()
     pool.join()
     df0["img_name"] = [i[0] for i in res]
-    df0["nbt_area"] = [i[1] for i in res]
-    df0["nbt_intensity"] = [i[2] for i in res]
-    df0["nbt_intensity_per_area"] = [i[3] for i in res]
-    df0["nbt_intensity_trim_perc"] = [i[4] for i in res]
+    df0["background_intensity"] = [i[1] for i in res]
+    df0["nbt_area"] = [i[2] for i in res]
+    df0["nbt_intensity"] = [i[3] for i in res]
+    df0["avg_nbt"] = [i[4] for i in res]
+    df0["trim_avg_nbt"] = [i[5] for i in res]
     df0 = pd.DataFrame.from_dict(df0)
 
     output_csv = os.path.join(

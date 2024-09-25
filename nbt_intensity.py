@@ -25,6 +25,7 @@ def nbt_intensity(img):
     raw_img, roi, contours = None, None, None
 
     try:
+        # if the input is the img directory
         if isinstance(img, str):
             raw_img = cv2.imread(img, cv2.IMREAD_COLOR)[:, :, ::-1]
             img_name = os.path.basename(img)
@@ -38,6 +39,7 @@ def nbt_intensity(img):
             if not os.path.exists(output_img_dir):
                 os.mkdir(output_img_dir)
 
+        # if the input is a numpy array
         elif isinstance(img, np.ndarray):
             raw_img = img
         else:
@@ -46,6 +48,13 @@ def nbt_intensity(img):
         h, w, d = raw_img.shape
         _, _, B = cv2.split(raw_img)
         B = cv2.bitwise_not(B)
+        
+        GRAY = cv2.cvtColor(raw_img, cv2.COLOR_RGB2GRAY)
+        GRAY = cv2.bitwise_not(GRAY)  # Black background
+
+        # Using only blue band signal or directly apply the 8-bit grey signal?
+        # Currently, use the weighted average of both (the blue band alone could be not enough sensitive to the staining)
+        B = np.uint8( (GRAY * 2.0 + B * 3.0) / 5 )
 
         try:
             thresh = skf_filters.threshold_multiotsu(B, classes=3)
@@ -54,14 +63,27 @@ def nbt_intensity(img):
 
         roi = B >= np.max(thresh)
 
+        # Background intensity
+        background_roi = np.double(B <= np.min(thresh))
+        background_intensity = cv2.bitwise_not(GRAY)  # White background
+        background_intensity = np.double(background_intensity) * background_roi
+        background_intensity = np.quantile(background_intensity, 0.9)
+        #background_intensity = background_intensity.flatten()
+        #if np.max(background_intensity) > 0:
+        #    quantile_thresh = np.quantile(background_intensity, 0.9)
+        #    background_intensity = np.average(background_intensity[background_intensity > quantile_thresh])
+        #else:
+        #    background_intensity = 255
+
         # The filtering process requires uint8 values
+        # Convert boolean to double, and convert to uint8
         roi = np.multiply(roi, 255).astype(np.uint8)
 
         # Filtering process
-        for _ in range(7):
-            roi = cv2.medianBlur(roi, 17)
+        for _ in range(10):
+            roi = cv2.medianBlur(roi, 11)
             roi = min_filter(roi, (11, 11), iteration=1)
-            roi = cv2.medianBlur(roi, 17)
+            roi = cv2.medianBlur(roi, 11)
             roi = max_filter(roi, (11, 11), iteration=1)
 
         # Create contour
@@ -69,7 +91,7 @@ def nbt_intensity(img):
             roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # convert back to float values of 0 or 1
+        # convert back to 0 or 1 (floats)
         roi = roi / 255.0
 
         # NBT staining area (pixels)
@@ -78,21 +100,21 @@ def nbt_intensity(img):
         # NBT staining intensity (sum of digital number of the staining area)
         total_nbt_intensity = np.sum((B * 1.0) * roi)
 
-        # Average NBT intensity (minimize the impact of root size variation to the NBT intensity values)
-        nbt_intensity_per_area = total_nbt_intensity / nbt_area if nbt_area > 0 else 0
+        # Average NBT intensity
+        average_nbt = total_nbt_intensity / nbt_area if nbt_area > 0 else 0
 
         # Averaged only values greater than percentile 30%
         masked_B = np.double(B) * roi
         masked_B = masked_B.flatten()
         if np.max(masked_B) > 0:
             quantile_thresh = np.quantile(masked_B, 0.3)
-            nbt_intensity_trim_perc = np.average(masked_B[masked_B > quantile_thresh])
+            trim_average_nbt = np.average(masked_B[masked_B > quantile_thresh])
         else:
-            nbt_intensity_trim_perc = 0
+            trim_average_nbt = 0
 
         # Plotting
         ## Draw contour line on a blank image
-        contours = cv2.drawContours(B * 0, contours, -1, (200, 200, 50), thickness=3)
+        contours = cv2.drawContours(B * 0, contours, -1, (200, 200, 100), thickness=2)
         ## Show the coutour as red color
         contours = cv2.merge([contours, contours, contours * 0])
         ## Combined the original image with the contour line
@@ -105,7 +127,7 @@ def nbt_intensity(img):
                 font = ImageFont.truetype(urlopen(font_url), size=70)
                 draw.text(
                     (30, 10),
-                    f"Avg_NBT: {round(nbt_intensity_per_area, 4)} = {round(total_nbt_intensity / 1_000_000, 4)} M / {nbt_area} pixels",
+                    f"Avg_NBT: {round(trim_average_nbt, 4)} = {round(total_nbt_intensity / 1_000_000, 4)} M / {nbt_area} pixels",
                     (255, 0, 0),
                     font=font,
                 )
@@ -122,14 +144,14 @@ def nbt_intensity(img):
         if np.max(B) == 0:
             nbt_area = 0
             total_nbt_intensity = 0
-            nbt_intensity_per_area = 0
-            nbt_intensity_trim_perc = 0
+            average_nbt = 0
+            trim_average_nbt = 0
         else:
             # if the image is problematic
             nbt_area = "NA"
             total_nbt_intensity = "NA"
-            nbt_intensity_per_area = "NA"
-            nbt_intensity_trim_perc = "NA"
+            average_nbt = "NA"
+            trim_average_nbt = "NA"
 
         if isinstance(img, str):
             contours = Image.fromarray(contours)
@@ -143,7 +165,7 @@ def nbt_intensity(img):
             )
             contours.save(os.path.join(output_img_dir, output_img_name))
 
-    return img_name, nbt_area, total_nbt_intensity, nbt_intensity_per_area, nbt_intensity_trim_perc
+    return img_name, background_intensity, nbt_area, total_nbt_intensity, average_nbt, trim_average_nbt
 
 
 # def nbt_intensity_multiproc(img_list):
