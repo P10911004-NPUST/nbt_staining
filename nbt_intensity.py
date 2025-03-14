@@ -57,9 +57,9 @@ def nbt_intensity(img):
         B = np.uint8( (GRAY * 2.0 + B * 3.0) / 5 )
 
         try:
-            thresh = skf_filters.threshold_multiotsu(B, classes=3)
+            thresh = skf_filters.threshold_multiotsu(B, classes = 4)
         except:
-            thresh = [0, 0, 255]
+            thresh = [0, 0, 0, 255]
 
         roi = B >= np.max(thresh)
 
@@ -80,11 +80,11 @@ def nbt_intensity(img):
         roi = np.multiply(roi, 255).astype(np.uint8)
 
         # Filtering process
-        for _ in range(10):
+        for _ in range(50):  # 10
             roi = cv2.medianBlur(roi, 11)
-            roi = min_filter(roi, (11, 11), iteration=1)
+            roi = min_filter(roi, (9, 9), iteration = 1) 
             roi = cv2.medianBlur(roi, 11)
-            roi = max_filter(roi, (11, 11), iteration=1)
+            roi = max_filter(roi, (9, 9), iteration = 1)
 
         # Create contour
         contours, hierarchy = cv2.findContours(
