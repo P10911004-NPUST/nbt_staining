@@ -1,4 +1,5 @@
 import os
+import math
 import re
 import cv2
 import numpy as np
@@ -50,41 +51,42 @@ def nbt_intensity(img):
         B = cv2.bitwise_not(B)
         
         GRAY = cv2.cvtColor(raw_img, cv2.COLOR_RGB2GRAY)
-        GRAY = cv2.bitwise_not(GRAY)  # Black background
+        GRAY = cv2.bitwise_not(GRAY)  # white object and black background
 
         # Using only blue band signal or directly apply the 8-bit grey signal?
         # Currently, use the weighted average of both (the blue band alone could be not enough sensitive to the staining)
         B = np.uint8( (GRAY * 2.0 + B * 3.0) / 5 )
-
+        
         try:
-            thresh = skf_filters.threshold_multiotsu(B, classes = 4)
+            B_filtered = cv2.GaussianBlur(GRAY, (11, 11), 0)
+            thresh = skf_filters.threshold_multiotsu(B_filtered, classes = 3)
         except:
-            thresh = [0, 0, 0, 255]
+            thresh = [0, 0, 255]
 
         roi = B >= np.max(thresh)
+
+        # kernel size (adjusted according to the ROI size compare to the whole image)
+        ks = np.sum(roi) / (h * w) * 1000
+        ks = math.ceil(ks)
+        ks = ks + 1 if ks % 2 == 0 else ks  # coerce to odd
+        ks = 25 if ks > 25 else ks  # no more than 21
 
         # Background intensity
         background_roi = np.double(B <= np.min(thresh))
         background_intensity = cv2.bitwise_not(GRAY)  # White background
         background_intensity = np.double(background_intensity) * background_roi
         background_intensity = np.quantile(background_intensity, 0.9)
-        #background_intensity = background_intensity.flatten()
-        #if np.max(background_intensity) > 0:
-        #    quantile_thresh = np.quantile(background_intensity, 0.9)
-        #    background_intensity = np.average(background_intensity[background_intensity > quantile_thresh])
-        #else:
-        #    background_intensity = 255
 
         # The filtering process requires uint8 values
         # Convert boolean to double, and convert to uint8
         roi = np.multiply(roi, 255).astype(np.uint8)
 
         # Filtering process
-        for _ in range(50):  # 10
-            roi = cv2.medianBlur(roi, 11)
-            roi = min_filter(roi, (9, 9), iteration = 1) 
-            roi = cv2.medianBlur(roi, 11)
-            roi = max_filter(roi, (9, 9), iteration = 1)
+        for _ in range(ks):  # 10
+            roi = cv2.medianBlur(roi, ks)
+            roi = min_filter(roi, (ks, ks), iteration = 1) 
+            roi = cv2.medianBlur(roi, ks)
+            roi = max_filter(roi, (ks, ks), iteration = 1)
 
         # Create contour
         contours, hierarchy = cv2.findContours(
@@ -135,7 +137,7 @@ def nbt_intensity(img):
                 print("Warning: Check font_url.")
 
             contours.save(os.path.join(output_img_dir, output_img_name))
-            print(f"Saving to: {img_dir}/{img_name}")
+            print(f"Saving to: {img_dir}/{img_name} ; ks_ratio: {ks} / {h*w} = {ks / (h*w)}")
 
     except:
         print(f"Problematic image: {img_dir}/{img_name}")
@@ -168,82 +170,3 @@ def nbt_intensity(img):
     return img_name, background_intensity, nbt_area, total_nbt_intensity, average_nbt, trim_average_nbt
 
 
-# def nbt_intensity_multiproc(img_list):
-#    if len(img_list) == 0 or img_list is None:
-#        pass
-
-#    img_dir = os.path.dirname(img_list[0])
-
-#    img_list = [
-#        os.path.join(img_dir, i)
-#        for i in img_list
-#        if i.lower().endswith((".jpg", ".jpeg", "tif", "tiff", "png", ".bmp"))
-#    ]
-
-#    output_dir = os.path.join(
-#        os.path.dirname(img_dir),
-#        "OUT_" + os.path.basename(img_dir),
-#    )
-
-#    df0 = {
-#        "img_name": [],
-#        "nbt_area": [],
-#        "nbt_intensity": [],
-#        "nbt_intensity_per_area": [],
-#    }
-
-#    pool = mp.Pool()
-#    res = pool.map(nbt_intensity, img_list)
-
-#    df0["img_name"] = [i[0] for i in res]
-#    df0["nbt_area"] = [i[1] for i in res]
-#    df0["nbt_intensity"] = [i[2] for i in res]
-#    df0["nbt_intensity_per_area"] = [i[3] for i in res]
-#    raw_img = [i[4] for i in res]
-#    roi = [i[5] for i in res]
-#    contours = [i[6] for i in res]
-
-#    df0 = pd.DataFrame.from_dict(df0)
-#    df0.to_csv(
-#        os.path.join(output_dir, os.path.basename(output_dir) + ".csv"), index=False
-#    )
-#    print(f"Save to {os.path.join(output_dir, os.path.basename(output_dir) + '.csv')}")
-
-
-## def nbt_intensity_multithread(img_list):
-##    if len(img_list) == 0 or img_list is None:
-##        pass
-##    # input_folder_dir = folder_path.get()
-##    input_folder_dir = os.path.dirname(img_list[0])
-##    img_list = [
-##        os.path.join(input_folder_dir, i)
-##        for i in os.listdir(input_folder_dir)
-##        if i.lower().endswith((".jpg", ".jpeg", "tif", "tiff", "png", ".bmp"))
-##    ]
-
-##    output_dir = os.path.join(
-##        os.path.dirname(input_folder_dir),
-##        "OUT_" + os.path.basename(input_folder_dir),
-##    )
-
-##    df0 = {
-##        "img_name": [],
-##        "nbt_area": [],
-##        "nbt_intensity": [],
-##        "nbt_intensity_per_area": [],
-##    }
-
-##    with ThreadPoolExecutor() as executor:
-##        res = executor.map(nbt_intensity, img_list)
-
-##    res = [i for i in res]
-
-##    df0["img_name"] = [i[0] for i in res]
-##    df0["nbt_area"] = [i[1] for i in res]
-##    df0["nbt_intensity"] = [i[2] for i in res]
-##    df0["nbt_intensity_per_area"] = [i[3] for i in res]
-##    df0 = pd.DataFrame.from_dict(df0)
-##    df0.to_csv(
-##        os.path.join(output_dir, os.path.basename(output_dir) + ".csv"), index=False
-##    )
-##    print(f"Save to {os.path.join(output_dir, os.path.basename(output_dir) + '.csv')}")

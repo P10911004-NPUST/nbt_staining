@@ -1,1 +1,1 @@
-pyinstaller -F -w --clean --name=NBT-Win64-2024Sep --icon=icon.ico gui.py
+pyinstaller -F -w --clean --name=NBT-Win64-2025May --icon=icon.ico gui.py
