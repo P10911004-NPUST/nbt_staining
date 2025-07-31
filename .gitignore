@@ -1,18 +1,33 @@
-# Files
-*.exe
+# Images
 *.jpg
+*.JPG
 *.jpeg
+*.JPEG
 *.tif
+*.TIF
 *.tiff
+*.TIFF
 *.bmp
+*.BMP
+*.gif
+*.GIF
+*.lif
 
+# Office files
 *.xls
 *.xlsx
 *.ppt
 *.pptx
 *.doc
 *.docx
+
+# Text files
 *.csv
+*.tsv
+*.tab
+
+# Executable
+*.exe
 
 # Virtual environment
 pyenv/
