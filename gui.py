@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     nbt_button = tk.Button(
         master=nbt_frame,
-        text="Run",
+        text="Run NBT",
         font="Calibri 15",
         command=run_nbt,
     ).pack(padx=20, side="top", anchor="center")

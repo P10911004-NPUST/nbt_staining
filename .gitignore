@@ -12,6 +12,7 @@
 *.gif
 *.GIF
 *.lif
+*.czi
 
 # Office files
 *.xls
@@ -25,9 +26,11 @@
 *.csv
 *.tsv
 *.tab
+*.pdf
 
 # Executable
 *.exe
+*.bat
 
 # Virtual environment
 pyenv/

@@ -58,19 +58,20 @@ def nbt_intensity(img):
         B = np.uint8( (GRAY * 2.0 + B * 3.0) / 5 )
         
         try:
-            B_filtered = cv2.GaussianBlur(GRAY, (25, 25), 0)
-            thresh = skf_filters.threshold_multiotsu(B_filtered, classes = 3)
+            B_filtered = cv2.medianBlur(B, 25)
+            B_filtered = cv2.GaussianBlur(B_filtered, (25, 25), 0)
+            thresh = skf_filters.threshold_multiotsu(B_filtered, classes = 5)
         except:
-            thresh = [0, 0, 255]
+            thresh = [0, 0, 0, 0, 255]
 
-        roi = B >= np.max(thresh)
+        roi = B >= np.mean(thresh)
 
         # kernel size (adjusted according to the ROI size compare to the whole image)
         ks = np.sum(roi) / (h * w) * 1000
         ks = math.ceil(ks)
         ks = ks + 1 if ks % 2 == 0 else ks  # coerce to odd
-        ks = 25 if ks > 25 else ks  # kernel size no more than 25
-        ks = 11 if ks < 11 else ks  # kernel size no less than 11
+        ks = 25 if ks > 25 else ks  # kernel size should not more than 25
+        ks = 11 if ks < 11 else ks  # kernel size should not less than 11
 
         # Background intensity
         background_roi = np.double(B <= np.min(thresh))
