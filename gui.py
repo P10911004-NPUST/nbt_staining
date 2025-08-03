@@ -19,6 +19,7 @@ try:
 except:
     print("Warning: Check icon_url.")
 
+img_type = (".jpg", ".JPG", ".jpeg", ".JPEG", ".tif", ".TIF", ".tiff", ".TIFF", ".png", ".PNG", ".bmp", ".BMP")
 
 def get_folder_path():
     global input_folder_dir, img_list
@@ -28,7 +29,7 @@ def get_folder_path():
     img_list = [
         os.path.join(input_folder_dir, i)
         for i in os.listdir(input_folder_dir)
-        if i.lower().endswith((".jpg", ".jpeg", "tif", "tiff", "png", ".bmp"))
+        if i.lower().endswith(img_type)
     ]
     folder_img_num.set(f"Load in {len(img_list)} images")
 
@@ -38,7 +39,7 @@ def run_nbt():
     img_list = [
         os.path.join(folder_path, i)
         for i in os.listdir(folder_path)
-        if i.lower().endswith(("jpg", "jpeg", "tif", "tiff", "png"))
+        if i.lower().endswith(img_type)
     ]
 
     output_dir = os.path.join(
