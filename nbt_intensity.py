@@ -124,7 +124,7 @@ def nbt_intensity(img):
 
         # Plotting
         ## Draw contour line on a blank image
-        contours = cv2.drawContours(B * 0, contours, -1, (200, 200, 100), thickness=2)
+        contours = cv2.drawContours(B * 0, contours, -1, (200, 200, 100), thickness=4)
         ## Show the coutour as yellow (R + G) color
         contours = cv2.merge([contours, contours, contours * 0])
         ## Combined the original image with the contour line
@@ -175,6 +175,6 @@ def nbt_intensity(img):
             )
             contours.save(os.path.join(output_img_dir, output_img_name))
 
-    return img_name, background_intensity, nbt_area, total_nbt_intensity, average_nbt, trim_average_nbt
+    return img_name, background_intensity, total_nbt_intensity, nbt_area, average_nbt, trim_average_nbt
 
 

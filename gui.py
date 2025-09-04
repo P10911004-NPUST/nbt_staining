@@ -49,8 +49,8 @@ def run_nbt():
     df0 = {
         "img_name": [],
         "background_intensity": [],
+        "nbt_total": [],
         "nbt_area": [],
-        "nbt_intensity": [],
         "avg_nbt": [],
         "trim_avg_nbt": [],
     }
@@ -61,8 +61,8 @@ def run_nbt():
     pool.join()
     df0["img_name"] = [i[0] for i in res]
     df0["background_intensity"] = [i[1] for i in res]
-    df0["nbt_area"] = [i[2] for i in res]
-    df0["nbt_intensity"] = [i[3] for i in res]
+    df0["nbt_total"] = [i[2] for i in res]
+    df0["nbt_area"] = [i[3] for i in res]
     df0["avg_nbt"] = [i[4] for i in res]
     df0["trim_avg_nbt"] = [i[5] for i in res]
     df0 = pd.DataFrame.from_dict(df0)
